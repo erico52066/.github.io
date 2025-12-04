@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>末蝕紀元：神之基因 v3.0 (MBTI版)</title>
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --panel-bg: #1a1a1a;
+            --text-color: #d0d0d0;
+            --accent-color: #00ff41; 
+            --danger-color: #ff3333;
+            --mbti-color: #00d9ff; /* MBTI 專屬色 */
+            --rare-color: #f0e130; 
+            --font-main: 'Segoe UI', 'Microsoft JhengHei', monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 950px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #333;
+            background: var(--panel-bg);
+            box-shadow: 0 0 30px rgba(0,0,0,1);
+            border-radius: 4px;
+        }
+
+        /* 頂部狀態欄 */
+        #header {
+            padding: 10px;
+            background: #222;
+            border-bottom: 1px solid #333;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            font-size: 0.85em;
+        }
+
+        .stat-group { display: flex; flex-direction: column; }
+        .stat-label { font-size: 0.75em; color: #666; }
+        .stat-value { font-weight: bold; color: #eee; }
+        .val-danger { color: var(--danger-color); }
+        .val-accent { color: var(--accent-color); }
+        .val-mbti { color: var(--mbti-color); }
+
+        /* 日誌區 */
+        #log-area {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #121212;
+            font-family: 'Courier New', monospace;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-entry { margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #222; animation: fadeIn 0.2s; }
+        .log-day { color: #444; font-size: 0.7em; letter-spacing: 1px; }
+        .log-title { font-weight: bold; color: #fff; margin-right:5px; }
+        
+        /* 關鍵字高亮 */
+        .hl-gain { color: var(--accent-color); }
+        .hl-loss { color: var(--danger-color); }
+        .hl-mbti { color: var(--mbti-color); font-weight: bold; }
+        .hl-item { color: var(--rare-color); }
+
+        /* 操作區 */
+        #action-area {
+            padding: 15px;
+            background: #222;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 140px;
+        }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        button {
+            background: #2a2a2a;
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+            position: relative;
+        }
+        button:hover { background: #333; border-color: var(--accent-color); color: #fff; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* 開始畫面 */
+        #start-screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: #0f0f0f; z-index: 100;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px;
+        }
+        
+        #profession-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            width: 100%;
+            max-width: 1000px;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .job-card {
+            background: #1e1e1e; border: 1px solid #333; padding: 10px;
+            cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .job-card:hover { border-color: var(--accent-color); background: #252525; }
+        .job-title { color: var(--accent-color); font-weight: bold; }
+        .job-stats { font-size: 0.8em; color: #777; margin-top: 5px; }
+
+        .mbti-badge {
+            display: inline-block; padding: 2px 6px; background: #003344; 
+            color: var(--mbti-color); border-radius: 3px; font-size: 0.8em; margin-left: 5px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 滾動條 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="header">
+        <div class="stat-group">
+            <span class="stat-label">存活天數</span>
+            <span class="stat-value" id="s-day">0</span>
+        </div>
+        <div class="stat-group">
+            <span class="stat-label">生命 (HP)</span>
+            <span class="stat-value" id="s-hp">100%</span>
+        </div>
+        <div class="stat-group">
+            <span class="stat-label">理智 (SAN)</span>
+            <span class="stat-value" id="s-san">100</span>
+        </div>
+        <div class="stat-group">
+            <span class="stat-label">感染度</span>
+            <span class="stat-value val-danger" id="s-inf">0%</span>
+        </div>
+        
+        <div class="stat-group">
+            <span class="stat-label">飽食/水分</span>
+            <span class="stat-value"><span id="s-food">100</span> / <span id="s-water">100</span></span>
+        </div>
+        <div class="stat-group">
+            <span class="stat-label">武器</span>
+            <span class="stat-value val-accent" id="s-wep" style="font-size:0.8em">無</span>
+        </div>
+        <div class="stat-group">
+            <span class="stat-label">彈藥</span>
+            <span class="stat-value" id="s-ammo">0</span>
+        </div>
+        <div class="stat-group">
+            <span class="stat-label">職業 & 人格</span>
+            <div style="line-height:1.2">
+                <span id="s-job" class="stat-value" style="font-size:0.8em;"></span><br>
+                <span id="s-mbti" class="val-mbti" style="font-size:0.8em;"></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="log-area"></div>
+    <div id="action-area"></div>
+</div>
+
+<div id="start-screen">
+    <div style="text-align:center; margin-bottom: 15px;">
+        <h1 style="color:white; margin:0;">末蝕紀元 <span style="font-size:0.5em; color:var(--mbti-color)">v3.0 MBTI版</span></h1>
+        <p style="color:#666; font-size: 0.9em;">點擊職業開始，性格將隨機生成</p>
+    </div>
+    <div id="profession-grid"></div>
+</div>
+
+<script>
+// ================= 數據庫 =================
+
+const WEAPONS = {
+    'fists': { name: '赤手空拳', type: 'melee', dmg: 3, noise: 0 },
+    'knife': { name: '戰術匕首', type: 'melee', dmg: 12, noise: 0 },
+    'bat': { name: '金屬球棒', type: 'melee', dmg: 15, noise: 10 },
+    'axe': { name: '消防斧', type: 'melee', dmg: 22, noise: 15 },
+    'crowbar': { name: '鐵撬', type: 'melee', dmg: 16, noise: 10, bonus: 'open_lock' },
+    'katana': { name: '武士刀', type: 'melee', dmg: 28, noise: 0, crit: 20 },
+    'chainsaw': { name: '燃油電鋸', type: 'melee', dmg: 45, noise: 90, fuel: true },
+    
+    'pistol': { name: 'Glock 17', type: 'ranged', dmg: 30, noise: 50 },
+    'revolver': { name: '左輪手槍', type: 'ranged', dmg: 45, noise: 70 },
+    'smg': { name: '衝鋒槍', type: 'ranged', dmg: 25, noise: 60, burst: true },
+    'shotgun': { name: '泵動霰彈槍', type: 'ranged', dmg: 65, noise: 95 },
+    'rifle': { name: '獵槍', type: 'ranged', dmg: 55, noise: 80, acc: 20 },
+    'crossbow': { name: '十字弩', type: 'ranged', dmg: 40, noise: 5, reusable: true }
+};
+
+// 16型人格定義 (Traits Replacement)
+const MBTI = {
+    // Analysts (分析家) - NT
+    'INTJ': { name: '建築師', tags: ['I','N','T','J'], bonus: '智力+3, 獨處時SAN恢復++, 策略制定(戰鬥不耗SAN)' },
+    'INTP': { name: '邏輯學家', tags: ['I','N','T','P'], bonus: '智力+4, 經驗獲取++, 容易鑽牛角尖(SAN波動大)' },
+    'ENTJ': { name: '指揮官', tags: ['E','N','T','J'], bonus: '全屬性+1, 戰鬥勝率++, 容易樹敵' },
+    'ENTP': { name: '辯論家', tags: ['E','N','T','P'], bonus: '智力+2, 敏捷+2, 逃跑率++, 隨機性高' },
+    
+    // Diplomats (外交家) - NF
+    'INFJ': { name: '提倡者', tags: ['I','N','F','J'], bonus: '意志+4, 洞察力(預知危險), 體質-2' },
+    'INFP': { name: '調停者', tags: ['I','N','F','P'], bonus: '意志+3, 感染抵抗++, 容易受傷(HP上限-10)' },
+    'ENFJ': { name: '主人公', tags: ['E','N','F','J'], bonus: '魅力(招募成功率++), 隊友存活率+, 獨處SAN降快' },
+    'ENFP': { name: '競選者', tags: ['E','N','F','P'], bonus: '幸運++, 搜刮稀有物++, 資源消耗快' },
+    
+    // Sentinels (守護者) - SJ
+    'ISTJ': { name: '物流師', tags: ['I','S','T','J'], bonus: '資源消耗-20%, 製作成功率++, 缺乏變通' },
+    'ISFJ': { name: '守衛者', tags: ['I','S','F','J'], bonus: '防禦力++, 醫療效果++, 攻擊力-' },
+    'ESTJ': { name: '總經理', tags: ['E','S','T','J'], bonus: '力量+3, 基礎傷害+, 社交強勢' },
+    'ESFJ': { name: '執政官', tags: ['E','S','F','J'], bonus: '生存物資獲取+, 團體士氣+, 依賴他人' },
+    
+    // Explorers (探險家) - SP
+    'ISTP': { name: '鑑賞家', tags: ['I','S','T','P'], bonus: '武器傷害+15%, 敏捷+2, 擅長維修' },
+    'ISFP': { name: '探險家', tags: ['I','S','F','P'], bonus: '藝術感(SAN值上限+20), 潛伏能力++, 體質一般' },
+    'ESTP': { name: '企業家', tags: ['E','S','T','P'], bonus: '暴擊率++, 敏捷+3, 風險偏好(容易受傷)' },
+    'ESFP': { name: '表演者', tags: ['E','S','F','P'], bonus: '敏捷+4, 閃避率++, 噪音吸引喪尸+' }
+};
+
+const JOBS = [
+    { id: 'soldier', name: '退伍軍人', stats: {s:8, a:6, i:4, w:7}, item: 'knife', ammo:0, desc: '均衡戰力' },
+    { id: 'police', name: '刑警', stats: {s:6, a:6, i:5, w:6}, item: 'pistol', ammo:12, desc: '自帶槍械' },
+    { id: 'swat', name: '特警', stats: {s:7, a:7, i:5, w:7}, item: 'smg', ammo:20, desc: '火力壓制' },
+    { id: 'doctor', name: '外科醫生', stats: {s:3, a:5, i:9, w:8}, item: 'fists', ammo:0, desc: '醫療加成' },
+    { id: 'worker', name: '建築工', stats: {s:9, a:4, i:3, w:6}, item: 'axe', ammo:0, desc: '近戰破壞' },
+    { id: 'thief', name: '慣竊', stats: {s:4, a:9, i:6, w:4}, item: 'crowbar', ammo:0, desc: '開鎖/逃跑' },
+    { id: 'scientist', name: '科學家', stats: {s:2, a:4, i:10, w:5}, item: 'fists', ammo:0, desc: '解謎/製作' },
+    { id: 'chef', name: '大廚', stats: {s:6, a:5, i:5, w:5}, item: 'knife', ammo:0, desc: '食物利用' },
+    { id: 'priest', name: '神父', stats: {s:4, a:4, i:7, w:10}, item: 'bat', ammo:0, desc: 'SAN值極高' },
+    { id: 'yakuza', name: '極道成員', stats: {s:7, a:7, i:4, w:6}, item: 'katana', ammo:0, desc: '近戰暴擊' },
+    { id: 'idol', name: '地下偶像', stats: {s:3, a:6, i:4, w:5}, item: 'fists', ammo:0, desc: '魅力/運氣' },
+    { id: 'hunter', name: '獵人', stats: {s:5, a:8, i:6, w:6}, item: 'crossbow', ammo:5, desc: '無聲遠程' },
+    { id: 'firefighter', name: '消防員', stats: {s:8, a:5, i:5, w:7}, item: 'axe', ammo:0, desc: '高血量坦' },
+    { id: 'student', name: '高中生', stats: {s:4, a:5, i:6, w:6}, item: 'bat', ammo:0, desc: '潛力成長型' }
+];
+
+const ENEMIES = [
+    { name: '漫步者', hp: 20, atk: 5, ph: 1 },
+    { name: '野狗', hp: 15, atk: 8, spd: 1, ph: 1 },
+    { name: '暴徒', hp: 35, atk: 12, human: true, ph: 1 },
+    { name: '狂奔者', hp: 30, atk: 10, spd: 2, ph: 2 },
+    { name: '酸液怪', hp: 45, atk: 18, ph: 2 },
+    { name: '重甲兵', hp: 80, atk: 20, def: 1, ph: 2 },
+    { name: '夜魔', hp: 60, atk: 30, spd: 3, ph: 3 },
+    { name: '屍王', hp: 200, atk: 45, boss: true, ph: 3 }
+];
+
+// ================= 遊戲狀態 =================
+
+let G = {
+    day: 0,
+    hp: 100, maxHp: 100,
+    san: 100,
+    food: 100, water: 100,
+    inf: 0,
+    ammo: 0,
+    job: null,
+    mbti: null, // 存儲 MBTI 對象
+    stats: {s:0, a:0, i:0, w:0},
+    wep: 'fists',
+    phase: 1,
+    skill: null,
+    alive: true
+};
+
+// ================= 核心邏輯 =================
+
+function startGame(jobId) {
+    const job = JOBS.find(j => j.id === jobId);
+    G.job = job;
+    G.stats = { ...job.stats };
+    G.wep = job.item;
+    G.ammo = job.ammo;
+    
+    // 隨機 MBTI
+    const keys = Object.keys(MBTI);
+    const mbtiKey = keys[Math.floor(Math.random() * keys.length)];
+    G.mbti = { id: mbtiKey, ...MBTI[mbtiKey] };
+    
+    // 應用 MBTI 初始屬性修正
+    applyMBTIBonus();
+
+    document.getElementById('start-screen').style.display = 'none';
+    
+    log(`遊戲開始`, `你是 ${job.name}，人格測試結果為 [${G.mbti.id} ${G.mbti.name}]`, 'hl-mbti');
+    log(`人格特質`, G.mbti.bonus, 'hl-mbti');
+    updateUI();
+    nextDay();
+}
+
+function applyMBTIBonus() {
+    const t = G.mbti.tags;
+    // T/F 影響 力量/意志
+    if (t.includes('T')) G.stats.s += 1;
+    if (t.includes('F')) G.stats.w += 1;
+    // S/N 影響 敏捷/智力
+    if (t.includes('S')) G.stats.a += 1;
+    if (t.includes('N')) G.stats.i += 1;
+    
+    // 特殊修正
+    if (G.mbti.id === 'INTJ') G.stats.i += 2;
+    if (G.mbti.id === 'ESTP') G.stats.a += 2;
+    if (G.mbti.id === 'INFP') G.maxHp -= 10;
+    if (G.mbti.id === 'ISTJ') G.maxHp += 10;
+    if (G.mbti.id === 'ENTJ') { G.stats.s+=1; G.stats.a+=1; G.stats.i+=1; G.stats.w+=1; }
+    
+    G.hp = G.maxHp;
+}
+
+function nextDay() {
+    if (!G.alive) return;
+    G.day++;
+    
+    // 階段
+    if (G.day === 15) { G.phase = 2; log("警報", "病毒變異，喪尸變得更具攻擊性！", "val-danger"); }
+    if (G.day === 40) { G.phase = 3; log("覺醒", "空氣中充滿了能量，異能者開始出現...", "val-mbti"); }
+
+    // 消耗計算 (MBTI J型人 節省資源)
+    let cost = 10;
+    if (G.mbti.tags.includes('J')) cost = 8; 
+    if (G.mbti.tags.includes('P')) cost = 12; // P型人 隨性消耗
+
+    G.food -= cost;
+    G.water -= cost + 5;
+    
+    // SAN 回復/扣除 (I型人獨處回復, E型人獨處扣除)
+    if (G.mbti.tags.includes('I')) G.san += 2;
+    else G.san -= 1;
+
+    checkStatus();
+    if (!G.alive) return;
+
+    // 異能覺醒 (MBTI N型人 機率高)
+    let awakeChance = G.mbti.tags.includes('N') ? 0.08 : 0.03;
+    if (G.phase === 3 && !G.skill && Math.random() < awakeChance) {
+        triggerEvent(evt_awake);
+    } else {
+        genEvent();
+    }
+    updateUI();
+}
+
+function checkStatus() {
+    if (G.food <= 0) { G.food = 0; G.hp -= 5; log("飢餓", "你餓得發慌。", "hl-loss"); }
+    if (G.water <= 0) { G.water = 0; G.hp -= 10; log("脫水", "你快渴死了。", "hl-loss"); }
+    
+    if (G.inf > 0) G.inf += (G.phase * 0.5);
+    if (G.inf >= 100) return gameOver("感染擴散全身，你變成了喪尸。");
+    
+    if (G.san <= 0) {
+        G.san = 0;
+        G.hp -= 20;
+        log("崩潰", "你精神崩潰了，做出自殘行為！", "hl-loss");
+    }
+    
+    if (G.hp <= 0) return gameOver("你的生命走到了盡頭。");
+}
+
+// ================= 事件系統 =================
+
+function genEvent() {
+    // MBTI E型人 容易遭遇人類/生物 (Encounter rate up)
+    let combatRate = G.mbti.tags.includes('E') ? 0.4 : 0.25;
+    let rand = Math.random();
+
+    if (rand < combatRate) return triggerEvent(evt_combat);
+    if (rand < 0.7) return triggerEvent(evt_scavenge);
+    return triggerEvent(evt_encounter);
+}
+
+function triggerEvent(fn) {
+    const e = fn();
+    const area = document.getElementById('action-area');
+    area.innerHTML = '';
+
+    const titleDiv = document.createElement('div');
+    titleDiv.innerHTML = `<strong style="color:#fff; font-size:1.1em">${e.title}</strong><br><span style="color:#888">${e.desc}</span>`;
+    area.appendChild(titleDiv);
+
+    const grid = document.createElement('div');
+    grid.className = 'btn-grid';
+
+    e.opts.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.innerHTML = opt.txt;
+        if (opt.disabled) btn.disabled = true;
+        btn.onclick = () => {
+            opt.func();
+            updateUI();
+        };
+        grid.appendChild(btn);
+    });
+    area.appendChild(grid);
+}
+
+// --- 事件庫 ---
+
+const evt_scavenge = () => {
+    const locs = ['廢棄超市', '民居', '警局', '五金店', '醫院'];
+    const loc = locs[Math.floor(Math.random() * locs.length)];
+    
+    return {
+        title: `搜索：${loc}`,
+        desc: `你進入了${loc}，這裡看起來...`,
+        opts: [
+            { txt: `搜索 (智力 ${G.stats.i})`, func: () => {
+                // MBTI S型人 搜刮加成
+                let roll = G.stats.i * 10 + (G.mbti.tags.includes('S') ? 20 : 0);
+                if (Math.random() * 100 < roll) {
+                    const f = 15 + Math.floor(Math.random()*20);
+                    const w = 15 + Math.floor(Math.random()*20);
+                    G.food += f; G.water += w;
+                    let msg = `獲得 食物+${f}, 水+${w}`;
+                    
+                    // 特殊掉落
+                    if (loc === '警局' && Math.random() > 0.6) { G.ammo += 10; msg += ", 子彈+10"; }
+                    if (loc === '醫院' && Math.random() > 0.7) { G.hp = Math.min(G.maxHp, G.hp+50); msg += ", 找到急救包(HP恢復)"; }
+                    
+                    log("搜索成功", msg, "hl-gain");
+                } else {
+                    log("一無所獲", "這裡空空如也。", "hl-loss");
+                }
+                nextDay();
+            }},
+            { txt: `快速搜刮 (敏捷 ${G.stats.a})`, func: () => {
+                if (Math.random() > 0.4) {
+                    G.food += 10;
+                    log("快速搜刮", "拿了點東西就跑。", "hl-gain");
+                } else {
+                    log("意外", "弄出聲音引來了敵人！", "hl-loss");
+                    return triggerEvent(evt_combat); // 強制轉戰鬥
+                }
+                nextDay();
+            }}
+        ]
+    };
+};
+
+const evt_combat = () => {
+    const pool = ENEMIES.filter(e => e.ph <= G.phase);
+    const enemy = pool[Math.floor(Math.random() * pool.length)];
+    const wep = WEAPONS[G.wep];
+    
+    // MBTI P型人 暴擊/逃跑加成
+    const isP = G.mbti.tags.includes('P');
+    
+    const fight = (range) => {
+        let dmg = 0;
+        let txt = "";
+        
+        if (range) {
+            G.ammo--;
+            dmg = wep.dmg + (G.stats.a * 2);
+            txt = `射擊`;
+        } else {
+            dmg = wep.dmg + (G.stats.s * 3);
+            txt = `近戰`;
+        }
+        
+        // MBTI T型人 戰鬥傷害加成
+        if (G.mbti.tags.includes('T')) dmg += 5;
+        // P型人 暴擊
+        if (isP && Math.random() > 0.8) { dmg *= 2; txt += "(暴擊!)"; }
+
+        if (dmg >= enemy.hp) {
+            log("勝利", `${txt} 造成 ${dmg} 傷害，擊殺了 ${enemy.name}。`, "hl-gain");
+            if (wep.noise > 40 && Math.random() > 0.7) {
+                log("噪音", "槍聲引來了更多敵人！", "val-danger");
+                return setTimeout(() => triggerEvent(evt_combat), 800);
+            }
+        } else {
+            let pdmg = Math.max(1, enemy.atk - G.stats.s/2);
+            G.hp -= pdmg;
+            log("戰鬥中", `${txt} 造成 ${dmg}，敵人反擊造成 ${pdmg} 傷害。`, "hl-loss");
+            if (G.hp > 0) return triggerEvent(() => ({ // 繼續戰鬥
+                title: `對決：${enemy.name}`, desc: `敵人還剩下 ${enemy.hp - dmg} HP`,
+                opts: [{txt: '繼續攻擊', func: () => fight(range)}, {txt: '逃跑', func: run}]
+            }));
+            else return checkStatus(); // 死亡檢查
+        }
+        nextDay();
+    };
+    
+    const run = () => {
+        let chance = G.stats.a * 10 + (isP ? 25 : 0);
+        if (Math.random()*100 < chance) {
+            log("逃跑", "你成功逃脫了。", "hl-gain");
+            nextDay();
+        } else {
+            G.hp -= 15;
+            log("失敗", "逃跑失敗，背部受傷！", "hl-loss");
+            fight(false); // 強制近戰
+        }
+    };
+
+    return {
+        title: `遭遇：${enemy.name}`,
+        desc: `HP: ${enemy.hp} | ATK: ${enemy.atk}`,
+        opts: [
+            { txt: `開火 (${G.wep})`, disabled: (wep.type!=='ranged' || G.ammo<=0), func: () => fight(true) },
+            { txt: `近戰攻擊`, func: () => fight(false) },
+            { txt: `逃跑`, func: run }
+        ]
+    };
+};
+
+const evt_encounter = () => {
+    // MBTI F型人 NPC 交互加成
+    const isF = G.mbti.tags.includes('F');
+    const isE = G.mbti.tags.includes('E');
+
+    return {
+        title: "倖存者",
+        desc: "你遇到一群看起來很疲憊的倖存者。",
+        opts: [
+            { txt: `交流 (F型/魅力)`, func: () => {
+                if (isF || isE) {
+                    G.san += 15;
+                    log("交流", "你們互相交換了情報，心理得到了慰藉。(SAN+15)", "hl-gain");
+                } else {
+                    log("尷尬", "你不知道該說什麼，氣氛很僵。", "hl-loss");
+                }
+                nextDay();
+            }},
+            { txt: `交易 (食物換子彈)`, func: () => {
+                if (G.food >= 20) {
+                    G.food -= 20; G.ammo += 8;
+                    log("交易", "失去食物，獲得子彈。", "hl-gain");
+                } else log("貧窮", "你物資不夠。", "hl-loss");
+                nextDay();
+            }},
+            { txt: `搶劫 (力量)`, func: () => {
+                if (G.stats.s > 6) {
+                    G.food += 30; G.san -= 10;
+                    log("搶劫", "你搶走了他們的物資，他們詛咒你。", "val-danger");
+                } else {
+                    G.hp -= 30;
+                    log("反殺", "他們有武器！你被打成了篩子。", "hl-loss");
+                }
+                nextDay();
+            }}
+        ]
+    };
+};
+
+const evt_awake = () => {
+    return {
+        title: "基因覺醒",
+        desc: "你的 DNA 正在重組，因為你的性格特質，你覺醒了...",
+        opts: [
+            { txt: "接受力量", func: () => {
+                const s = G.mbti.tags.includes('T') ? '鋼鐵之軀 (減傷)' : '念力 (控場)';
+                G.skill = s;
+                if (s.includes('鋼鐵')) G.maxHp += 50;
+                else G.san = 100;
+                log("覺醒", `你獲得了異能：[${s}]`, "hl-mbti");
+                nextDay();
+            }}
+        ]
+    };
+};
+
+// ================= UI =================
+
+function log(t, d, c="") {
+    const b = document.getElementById('log-area');
+    b.innerHTML += `<div class="log-entry"><span class="log-day">Day ${G.day}</span> <span class="log-title ${c}">[${t}]</span> ${d}</div>`;
+    b.scrollTop = b.scrollHeight;
+}
+
+function updateUI() {
+    document.getElementById('s-day').innerText = G.day;
+    document.getElementById('s-hp').innerText = Math.floor(G.hp);
+    document.getElementById('s-san').innerText = Math.floor(G.san);
+    document.getElementById('s-inf').innerText = Math.floor(G.inf) + '%';
+    document.getElementById('s-food').innerText = Math.floor(G.food);
+    document.getElementById('s-water').innerText = Math.floor(G.water);
+    document.getElementById('s-ammo').innerText = G.ammo;
+    document.getElementById('s-wep').innerText = WEAPONS[G.wep].name;
+    document.getElementById('s-job').innerText = G.job.name;
+    if (G.mbti) document.getElementById('s-mbti').innerText = `${G.mbti.id}`;
+}
+
+function gameOver(reason) {
+    G.alive = false;
+    document.getElementById('action-area').innerHTML = `
+        <div style="text-align:center; color:#ff4444">
+            <h2>GAME OVER</h2><p>${reason}</p>
+            <button onclick="location.reload()" style="width:100%;text-align:center">重新開始</button>
+        </div>`;
+}
+
+// 初始化
+(function() {
+    const g = document.getElementById('profession-grid');
+    JOBS.forEach(j => {
+        const d = document.createElement('div');
+        d.className = 'job-card';
+        d.innerHTML = `
+            <div class="job-title">${j.name}</div>
+            <div style="font-size:0.8em; color:#999; margin:4px 0">${j.desc}</div>
+            <div class="job-stats">
+                STR:${j.stats.s} AGI:${j.stats.a}<br>INT:${j.stats.i} WIL:${j.stats.w}
+            </div>`;
+        d.onclick = () => startGame(j.id);
+        g.appendChild(d);
+    });
+})();
+
+</script>
+</body>
+</html>
