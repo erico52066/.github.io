@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>末蝕紀元：神之基因 v3.0 (MBTI版)</title>
+    <title>Bobby紀元 v7.1</title>
     <style>
         :root {
-            --bg-color: #0f0f0f;
-            --panel-bg: #1a1a1a;
-            --text-color: #d0d0d0;
-            --accent-color: #00ff41; 
-            --danger-color: #ff3333;
-            --mbti-color: #00d9ff; /* MBTI 專屬色 */
-            --rare-color: #f0e130; 
-            --font-main: 'Segoe UI', 'Microsoft JhengHei', monospace;
+            --bg-color: #050505;
+            --panel-bg: #111;
+            --text-color: #bbb;
+            --font-main: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            
+            /* Diablo Rarity Colors */
+            --r-common: #b0b0b0;    /* 白 */
+            --r-rare: #55aaff;      /* 藍 */
+            --r-epic: #aa55ff;      /* 紫 */
+            --r-legend: #ffaa00;    /* 橙 */
+            
+            --hp-color: #ff5555;
+            --san-color: #55aaff;
         }
 
         body {
@@ -31,155 +36,151 @@
 
         #game-container {
             width: 100%;
-            max-width: 950px;
+            max-width: 1000px;
             display: flex;
             flex-direction: column;
             border: 1px solid #333;
             background: var(--panel-bg);
-            box-shadow: 0 0 30px rgba(0,0,0,1);
-            border-radius: 4px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            border-radius: 5px;
+            position: relative;
         }
 
-        /* 頂部狀態欄 */
+        /* 頂部數據 (可點擊查看面板) */
         #header {
             padding: 10px;
-            background: #222;
+            background: #181818;
             border-bottom: 1px solid #333;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 5px;
-            font-size: 0.85em;
+            font-size: 0.8em;
+            text-align: center;
         }
+        .stat-box { cursor: pointer; transition: 0.2s; padding: 2px; border-radius: 4px; }
+        .stat-box:hover { background: #333; }
+        .stat-val { font-weight: bold; font-size: 1.1em; color: #fff; }
+        .stat-lbl { color: #666; font-size: 0.8em; }
 
-        .stat-group { display: flex; flex-direction: column; }
-        .stat-label { font-size: 0.75em; color: #666; }
-        .stat-value { font-weight: bold; color: #eee; }
-        .val-danger { color: var(--danger-color); }
-        .val-accent { color: var(--accent-color); }
-        .val-mbti { color: var(--mbti-color); }
+        /* 裝備欄 (可點擊) */
+        #equip-bar {
+            padding: 10px;
+            background: #141414;
+            border-bottom: 1px solid #333;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+        .eq-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #0a0a0a; padding: 8px 10px; border-radius: 4px; border: 1px solid #222;
+            cursor: pointer; transition: 0.2s;
+        }
+        .eq-row:hover { border-color: #555; background: #1a1a1a; }
+        .eq-label { font-size: 0.8em; color: #555; margin-right: 10px; }
+        
+        /* 品質顏色類 */
+        .q0 { color: var(--r-common); }
+        .q1 { color: var(--r-rare); text-shadow: 0 0 5px rgba(85,170,255,0.3); }
+        .q2 { color: var(--r-epic); text-shadow: 0 0 8px rgba(170,85,255,0.5); font-weight: bold; }
+        .q3 { color: var(--r-legend); text-shadow: 0 0 10px rgba(255,170,0,0.6); font-weight: bold; border-bottom: 1px dashed var(--r-legend); }
 
-        /* 日誌區 */
+        /* 日誌 */
         #log-area {
             flex-grow: 1;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
-            background-color: #121212;
-            font-family: 'Courier New', monospace;
+            background-color: #080808;
+            font-family: 'Consolas', var(--font-main);
             border-bottom: 1px solid #333;
+            line-height: 1.6;
+            font-size: 0.95em;
         }
+        .log-entry { margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #1a1a1a; animation: fadeIn 0.2s; }
+        .day-tag { color: #444; font-size: 0.8em; margin-right: 8px; }
+        .c-gain { color: #0f0; } .c-loss { color: #f33; } .c-item { color: #fc0; } .c-epic { color: #d0f; }
 
-        .log-entry { margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #222; animation: fadeIn 0.2s; }
-        .log-day { color: #444; font-size: 0.7em; letter-spacing: 1px; }
-        .log-title { font-weight: bold; color: #fff; margin-right:5px; }
-        
-        /* 關鍵字高亮 */
-        .hl-gain { color: var(--accent-color); }
-        .hl-loss { color: var(--danger-color); }
-        .hl-mbti { color: var(--mbti-color); font-weight: bold; }
-        .hl-item { color: var(--rare-color); }
-
-        /* 操作區 */
+        /* 操作按鈕 */
         #action-area {
             padding: 15px;
-            background: #222;
+            background: #1a1a1a;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            min-height: 140px;
+            min-height: 200px;
         }
-
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
+        .btn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        
         button {
-            background: #2a2a2a;
+            background: #252525;
             color: #ccc;
             border: 1px solid #444;
             padding: 12px;
             cursor: pointer;
             text-align: left;
-            transition: 0.2s;
+            transition: 0.1s;
+            border-radius: 4px;
             position: relative;
         }
-        button:hover { background: #333; border-color: var(--accent-color); color: #fff; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        button:hover { background: #333; border-color: #fff; color: #fff; transform: translateY(-1px); }
+        button:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        .val-cost { float: right; color: #d84; font-size: 0.85em; }
 
-        /* 開始畫面 */
-        #start-screen {
+        /* 全屏彈窗 (Overlay) */
+        .overlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: #0f0f0f; z-index: 100;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 20px;
+            background: rgba(0,0,0,0.95); z-index: 99;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px);
         }
         
-        #profession-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 10px;
-            width: 100%;
-            max-width: 1000px;
-            overflow-y: auto;
-            padding-bottom: 20px;
+        /* 詳情彈窗 */
+        #modal-content {
+            background: #111; border: 1px solid #444; padding: 20px; 
+            max-width: 80%; width: 400px; border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,1); text-align: center;
         }
+        .close-btn { margin-top: 20px; width: 100%; text-align: center; border-color: #666; }
 
-        .job-card {
-            background: #1e1e1e; border: 1px solid #333; padding: 10px;
-            cursor: pointer; transition: 0.2s; position: relative;
-        }
-        .job-card:hover { border-color: var(--accent-color); background: #252525; }
-        .job-title { color: var(--accent-color); font-weight: bold; }
-        .job-stats { font-size: 0.8em; color: #777; margin-top: 5px; }
+        .job-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; width: 90%; max-height:80vh; overflow-y:auto; padding: 10px;}
+        .job-card { border:1px solid #333; padding:15px; cursor:pointer; background:#111; transition: 0.2s;}
+        .job-card:hover { border-color: var(--r-legend); background:#222; }
 
-        .mbti-badge {
-            display: inline-block; padding: 2px 6px; background: #003344; 
-            color: var(--mbti-color); border-radius: 3px; font-size: 0.8em; margin-left: 5px;
-        }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* 滾動條 */
+        @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #444; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
+    <!-- 頂部數據 -->
     <div id="header">
-        <div class="stat-group">
-            <span class="stat-label">存活天數</span>
-            <span class="stat-value" id="s-day">0</span>
+        <div class="stat-box"><span class="stat-lbl">Day</span><span class="stat-val" id="v-day">0/105</span></div>
+        <div class="stat-box"><span class="stat-lbl">HP</span><span class="stat-val" style="color:var(--hp-color)" id="v-hp">100</span></div>
+        <div class="stat-box"><span class="stat-lbl">SAN</span><span class="stat-val" style="color:var(--san-color)" id="v-san">100</span></div>
+        <div class="stat-box" onclick="showStats()" title="點擊查看詳細面板"><span class="stat-lbl">屬性(點我)</span><span class="stat-val" id="v-stats">0/0/0</span></div>
+        <div class="stat-box"><span class="stat-lbl">物資</span><span class="stat-val"><span id="v-food">100</span>/<span id="v-water">100</span></span></div>
+    </div>
+    
+    <!-- 裝備欄：可點擊 -->
+    <div id="equip-bar">
+        <div class="eq-row" onclick="showItemDetail('melee')">
+            <span class="eq-label">⚔️ 近戰</span>
+            <span id="eq-melee" class="q0">無</span>
         </div>
-        <div class="stat-group">
-            <span class="stat-label">生命 (HP)</span>
-            <span class="stat-value" id="s-hp">100%</span>
+        <div class="eq-row" onclick="showItemDetail('range')">
+            <span class="eq-label">🔫 遠程</span>
+            <span><span id="eq-range" class="q0">無</span> <span id="v-ammo" style="color:#666;font-size:0.8em">(0)</span></span>
         </div>
-        <div class="stat-group">
-            <span class="stat-label">理智 (SAN)</span>
-            <span class="stat-value" id="s-san">100</span>
+        <div class="eq-row" onclick="showItemDetail('head')">
+            <span class="eq-label">🪖 頭部</span>
+            <span id="eq-head" class="q0">無</span>
         </div>
-        <div class="stat-group">
-            <span class="stat-label">感染度</span>
-            <span class="stat-value val-danger" id="s-inf">0%</span>
-        </div>
-        
-        <div class="stat-group">
-            <span class="stat-label">飽食/水分</span>
-            <span class="stat-value"><span id="s-food">100</span> / <span id="s-water">100</span></span>
-        </div>
-        <div class="stat-group">
-            <span class="stat-label">武器</span>
-            <span class="stat-value val-accent" id="s-wep" style="font-size:0.8em">無</span>
-        </div>
-        <div class="stat-group">
-            <span class="stat-label">彈藥</span>
-            <span class="stat-value" id="s-ammo">0</span>
-        </div>
-        <div class="stat-group">
-            <span class="stat-label">職業 & 人格</span>
-            <div style="line-height:1.2">
-                <span id="s-job" class="stat-value" style="font-size:0.8em;"></span><br>
-                <span id="s-mbti" class="val-mbti" style="font-size:0.8em;"></span>
-            </div>
+        <div class="eq-row" onclick="showItemDetail('body')">
+            <span class="eq-label">👕 身體</span>
+            <span id="eq-body" class="q0">無</span>
         </div>
     </div>
 
@@ -187,450 +188,615 @@
     <div id="action-area"></div>
 </div>
 
-<div id="start-screen">
-    <div style="text-align:center; margin-bottom: 15px;">
-        <h1 style="color:white; margin:0;">末蝕紀元 <span style="font-size:0.5em; color:var(--mbti-color)">v3.0 MBTI版</span></h1>
-        <p style="color:#666; font-size: 0.9em;">點擊職業開始，性格將隨機生成</p>
+<!-- 彈窗層 -->
+<div id="screen-modal" class="overlay" style="display:none" onclick="closeModal()">
+    <div id="modal-content" onclick="event.stopPropagation()">
+        <h2 id="m-title" style="margin:0 0 10px 0">標題</h2>
+        <div id="m-desc" style="color:#ccc; line-height:1.6; font-size:0.95em">內容</div>
+        <button class="close-btn" onclick="closeModal()">關閉</button>
     </div>
-    <div id="profession-grid"></div>
+</div>
+
+<!-- 開始畫面 -->
+<div id="screen-start" class="overlay">
+    <h1 style="color:var(--r-legend); font-size: 2.5em; text-shadow: 0 0 20px rgba(255,170,0,0.5);">Bobby紀元 v7.1</h1>
+    <p style="color:#888; margin-bottom: 30px;">點擊裝備查看詳細詞條</p>
+    
+    <div style="display:flex; gap:20px;">
+        <button onclick="setDiff(1)" style="width:140px; text-align:center;">🟢 正常</button>
+        <button onclick="setDiff(2)" style="width:140px; text-align:center; border-color:var(--r-rare)">🟡 困難</button>
+        <button onclick="setDiff(3)" style="width:140px; text-align:center; border-color:var(--r-legend)">🔴 噩夢</button>
+    </div>
+</div>
+
+<div id="screen-jobs" class="overlay" style="display:none">
+    <h2 style="color:#ccc">選擇前世身份</h2>
+    <div id="job-container" class="job-grid"></div>
 </div>
 
 <script>
-// ================= 數據庫 =================
+// ==================== 數據庫 ====================
 
-const WEAPONS = {
-    'fists': { name: '赤手空拳', type: 'melee', dmg: 3, noise: 0 },
-    'knife': { name: '戰術匕首', type: 'melee', dmg: 12, noise: 0 },
-    'bat': { name: '金屬球棒', type: 'melee', dmg: 15, noise: 10 },
-    'axe': { name: '消防斧', type: 'melee', dmg: 22, noise: 15 },
-    'crowbar': { name: '鐵撬', type: 'melee', dmg: 16, noise: 10, bonus: 'open_lock' },
-    'katana': { name: '武士刀', type: 'melee', dmg: 28, noise: 0, crit: 20 },
-    'chainsaw': { name: '燃油電鋸', type: 'melee', dmg: 45, noise: 90, fuel: true },
-    
-    'pistol': { name: 'Glock 17', type: 'ranged', dmg: 30, noise: 50 },
-    'revolver': { name: '左輪手槍', type: 'ranged', dmg: 45, noise: 70 },
-    'smg': { name: '衝鋒槍', type: 'ranged', dmg: 25, noise: 60, burst: true },
-    'shotgun': { name: '泵動霰彈槍', type: 'ranged', dmg: 65, noise: 95 },
-    'rifle': { name: '獵槍', type: 'ranged', dmg: 55, noise: 80, acc: 20 },
-    'crossbow': { name: '十字弩', type: 'ranged', dmg: 40, noise: 5, reusable: true }
+const BASE_DB = {
+    melee: [
+        {n:'拳頭',t:0,v:2}, {n:'指甲銼',t:1,v:3}, {n:'原子筆',t:1,v:4}, {n:'拖鞋',t:1,v:2}, {n:'玻璃片',t:1,v:5},
+        {n:'水果刀',t:2,v:10}, {n:'鐵鎚',t:2,v:14}, {n:'平底鍋',t:2,v:12}, {n:'菜刀',t:2,v:13}, {n:'扳手',t:2,v:11},
+        {n:'棒球棍',t:3,v:20}, {n:'消防斧',t:3,v:25}, {n:'鐵撬',t:3,v:22}, {n:'開山刀',t:3,v:24}, {n:'警棍',t:3,v:18},
+        {n:'軍用匕首',t:4,v:30}, {n:'武士刀',t:4,v:38}, {n:'燃油電鋸',t:4,v:55}, {n:'三棱刺',t:4,v:33},
+        {n:'光劍',t:5,v:80}, {n:'高頻刃',t:5,v:70}, {n:'死神鐮刀',t:5,v:75}, {n:'動力拳套',t:5,v:65}
+    ],
+    ranged: [
+        {n:'小石子',t:1,v:2}, {n:'飛鏢',t:1,v:5}, {n:'彈弓',t:2,v:10}, {n:'釘槍',t:2,v:15}, {n:'自製弓',t:2,v:18},
+        {n:'複合弩',t:3,v:35}, {n:'警用手槍',t:3,v:30}, {n:'左輪',t:3,v:45}, {n:'獵槍',t:3,v:55},
+        {n:'衝鋒槍',t:4,v:40}, {n:'AK47',t:4,v:50}, {n:'AWM狙擊',t:4,v:90}, {n:'M249機槍',t:4,v:65},
+        {n:'高斯步槍',t:5,v:110}, {n:'雷射槍',t:5,v:100}, {n:'黑洞炮',t:5,v:999}
+    ],
+    head: [
+        {n:'無',t:0,v:0}, {n:'塑膠袋',t:1,v:0}, {n:'西瓜皮',t:1,v:1}, {n:'紙箱',t:1,v:1},
+        {n:'鍋蓋',t:2,v:3}, {n:'單車盔',t:2,v:4}, {n:'工地帽',t:2,v:5},
+        {n:'機車盔',t:3,v:8}, {n:'防毒面具',t:3,v:6}, {n:'電焊面罩',t:3,v:7},
+        {n:'鎮暴盔',t:4,v:12}, {n:'凱夫拉盔',t:4,v:16}, {n:'夜視盔',t:4,v:14},
+        {n:'外骨骼盔',t:5,v:25}, {n:'泰坦動力盔',t:5,v:35}
+    ],
+    body: [
+        {n:'無',t:0,v:0}, {n:'T-shirt',t:1,v:0}, {n:'紙皮甲',t:1,v:1}, {n:'雨衣',t:1,v:0},
+        {n:'牛仔服',t:2,v:3}, {n:'皮夾克',t:2,v:4}, {n:'棉被',t:2,v:5},
+        {n:'防刺服',t:3,v:10}, {n:'防摔衣',t:3,v:8}, {n:'鎖子甲',t:3,v:12},
+        {n:'防彈衣',t:4,v:20}, {n:'戰術背心',t:4,v:22}, {n:'重型防爆',t:4,v:28},
+        {n:'納米生化裝',t:5,v:45}, {n:'動力裝甲',t:5,v:60}
+    ]
 };
 
-// 16型人格定義 (Traits Replacement)
-const MBTI = {
-    // Analysts (分析家) - NT
-    'INTJ': { name: '建築師', tags: ['I','N','T','J'], bonus: '智力+3, 獨處時SAN恢復++, 策略制定(戰鬥不耗SAN)' },
-    'INTP': { name: '邏輯學家', tags: ['I','N','T','P'], bonus: '智力+4, 經驗獲取++, 容易鑽牛角尖(SAN波動大)' },
-    'ENTJ': { name: '指揮官', tags: ['E','N','T','J'], bonus: '全屬性+1, 戰鬥勝率++, 容易樹敵' },
-    'ENTP': { name: '辯論家', tags: ['E','N','T','P'], bonus: '智力+2, 敏捷+2, 逃跑率++, 隨機性高' },
-    
-    // Diplomats (外交家) - NF
-    'INFJ': { name: '提倡者', tags: ['I','N','F','J'], bonus: '意志+4, 洞察力(預知危險), 體質-2' },
-    'INFP': { name: '調停者', tags: ['I','N','F','P'], bonus: '意志+3, 感染抵抗++, 容易受傷(HP上限-10)' },
-    'ENFJ': { name: '主人公', tags: ['E','N','F','J'], bonus: '魅力(招募成功率++), 隊友存活率+, 獨處SAN降快' },
-    'ENFP': { name: '競選者', tags: ['E','N','F','P'], bonus: '幸運++, 搜刮稀有物++, 資源消耗快' },
-    
-    // Sentinels (守護者) - SJ
-    'ISTJ': { name: '物流師', tags: ['I','S','T','J'], bonus: '資源消耗-20%, 製作成功率++, 缺乏變通' },
-    'ISFJ': { name: '守衛者', tags: ['I','S','F','J'], bonus: '防禦力++, 醫療效果++, 攻擊力-' },
-    'ESTJ': { name: '總經理', tags: ['E','S','T','J'], bonus: '力量+3, 基礎傷害+, 社交強勢' },
-    'ESFJ': { name: '執政官', tags: ['E','S','F','J'], bonus: '生存物資獲取+, 團體士氣+, 依賴他人' },
-    
-    // Explorers (探險家) - SP
-    'ISTP': { name: '鑑賞家', tags: ['I','S','T','P'], bonus: '武器傷害+15%, 敏捷+2, 擅長維修' },
-    'ISFP': { name: '探險家', tags: ['I','S','F','P'], bonus: '藝術感(SAN值上限+20), 潛伏能力++, 體質一般' },
-    'ESTP': { name: '企業家', tags: ['E','S','T','P'], bonus: '暴擊率++, 敏捷+3, 風險偏好(容易受傷)' },
-    'ESFP': { name: '表演者', tags: ['E','S','F','P'], bonus: '敏捷+4, 閃避率++, 噪音吸引喪尸+' }
+const PREFIX = {
+    atk: [ {n:'鋒利的',s:'s',v:2}, {n:'殘暴的',dmgP:0.2}, {n:'致命的',crit:10}, {n:'沉重的',s:'s',v:4} ],
+    def: [ {n:'堅固的',s:'w',v:2}, {n:'硬化的',defP:0.2}, {n:'厚重的',defP:0.3}, {n:'靈巧的',s:'a',v:3} ],
+    util: [ {n:'聰明的',s:'i',v:3}, {n:'幸運的',loot:0.1}, {n:'神聖的',san:2} ]
+};
+
+const SUFFIX = {
+    dmg: [ {n:'之狼',crit:15}, {n:'之熊',s:'s',v:5}, {n:'之吸血',leech:0.1}, {n:'之毀滅',dmgP:0.3} ],
+    sur: [ {n:'之龜',defP:0.2}, {n:'之貓',s:'a',v:5}, {n:'之再生',heal:2}, {n:'之石',hp:30} ],
+    god: [ {n:'之神力',s:'s',v:10}, {n:'之光',san:5}, {n:'之時間',dodge:20} ]
 };
 
 const JOBS = [
-    { id: 'soldier', name: '退伍軍人', stats: {s:8, a:6, i:4, w:7}, item: 'knife', ammo:0, desc: '均衡戰力' },
-    { id: 'police', name: '刑警', stats: {s:6, a:6, i:5, w:6}, item: 'pistol', ammo:12, desc: '自帶槍械' },
-    { id: 'swat', name: '特警', stats: {s:7, a:7, i:5, w:7}, item: 'smg', ammo:20, desc: '火力壓制' },
-    { id: 'doctor', name: '外科醫生', stats: {s:3, a:5, i:9, w:8}, item: 'fists', ammo:0, desc: '醫療加成' },
-    { id: 'worker', name: '建築工', stats: {s:9, a:4, i:3, w:6}, item: 'axe', ammo:0, desc: '近戰破壞' },
-    { id: 'thief', name: '慣竊', stats: {s:4, a:9, i:6, w:4}, item: 'crowbar', ammo:0, desc: '開鎖/逃跑' },
-    { id: 'scientist', name: '科學家', stats: {s:2, a:4, i:10, w:5}, item: 'fists', ammo:0, desc: '解謎/製作' },
-    { id: 'chef', name: '大廚', stats: {s:6, a:5, i:5, w:5}, item: 'knife', ammo:0, desc: '食物利用' },
-    { id: 'priest', name: '神父', stats: {s:4, a:4, i:7, w:10}, item: 'bat', ammo:0, desc: 'SAN值極高' },
-    { id: 'yakuza', name: '極道成員', stats: {s:7, a:7, i:4, w:6}, item: 'katana', ammo:0, desc: '近戰暴擊' },
-    { id: 'idol', name: '地下偶像', stats: {s:3, a:6, i:4, w:5}, item: 'fists', ammo:0, desc: '魅力/運氣' },
-    { id: 'hunter', name: '獵人', stats: {s:5, a:8, i:6, w:6}, item: 'crossbow', ammo:5, desc: '無聲遠程' },
-    { id: 'firefighter', name: '消防員', stats: {s:8, a:5, i:5, w:7}, item: 'axe', ammo:0, desc: '高血量坦' },
-    { id: 'student', name: '高中生', stats: {s:4, a:5, i:6, w:6}, item: 'bat', ammo:0, desc: '潛力成長型' }
+    {n:'特種兵', s:{s:8,a:6,i:4,w:7}, g:['軍用匕首','無','無','防刺服'], ammo:0},
+    {n:'刑警', s:{s:6,a:6,i:5,w:6}, g:['警棍','警用手槍','無','防彈衣'], ammo:15},
+    {n:'死宅', s:{s:3,a:4,i:7,w:5}, g:['武士刀','無','內褲','T-shirt'], ammo:0},
+    {n:'醫生', s:{s:3,a:5,i:9,w:8}, g:['水果刀','無','無','無'], ammo:0},
+    {n:'建築工', s:{s:9,a:4,i:3,w:6}, g:['鐵鎚','釘槍','工地帽','牛仔服'], ammo:20},
+    {n:'學生', s:{s:4,a:6,i:6,w:6}, g:['棒球棍','彈弓','無','T-shirt'], ammo:10},
+    {n:'殺手', s:{s:5,a:8,i:6,w:5}, g:['三棱刺','無','無','西裝'], ammo:0},
+    {n:'瘋子', s:{s:5,a:5,i:2,w:10}, g:['燃油電鋸','無','無','無'], ammo:0}
 ];
 
-const ENEMIES = [
-    { name: '漫步者', hp: 20, atk: 5, ph: 1 },
-    { name: '野狗', hp: 15, atk: 8, spd: 1, ph: 1 },
-    { name: '暴徒', hp: 35, atk: 12, human: true, ph: 1 },
-    { name: '狂奔者', hp: 30, atk: 10, spd: 2, ph: 2 },
-    { name: '酸液怪', hp: 45, atk: 18, ph: 2 },
-    { name: '重甲兵', hp: 80, atk: 20, def: 1, ph: 2 },
-    { name: '夜魔', hp: 60, atk: 30, spd: 3, ph: 3 },
-    { name: '屍王', hp: 200, atk: 45, boss: true, ph: 3 }
-];
-
-// ================= 遊戲狀態 =================
-
+// ==================== 遊戲狀態 ====================
 let G = {
-    day: 0,
-    hp: 100, maxHp: 100,
-    san: 100,
-    food: 100, water: 100,
-    inf: 0,
-    ammo: 0,
-    job: null,
-    mbti: null, // 存儲 MBTI 對象
-    stats: {s:0, a:0, i:0, w:0},
-    wep: 'fists',
-    phase: 1,
-    skill: null,
-    alive: true
+    day:0, maxDay:105, diff:1,
+    hp:100, maxHp:100, san:100,
+    food:100, water:100, ammo:0,
+    stats:{s:0,a:0,i:0,w:0},
+    eq:{melee:null, range:null, head:null, body:null},
+    buffs:[], alive:true, job:''
 };
 
-// ================= 核心邏輯 =================
+// ==================== 裝備系統 ====================
 
-function startGame(jobId) {
-    const job = JOBS.find(j => j.id === jobId);
-    G.job = job;
-    G.stats = { ...job.stats };
-    G.wep = job.item;
-    G.ammo = job.ammo;
-    
-    // 隨機 MBTI
-    const keys = Object.keys(MBTI);
-    const mbtiKey = keys[Math.floor(Math.random() * keys.length)];
-    G.mbti = { id: mbtiKey, ...MBTI[mbtiKey] };
-    
-    // 應用 MBTI 初始屬性修正
-    applyMBTIBonus();
+function createItem(type, baseName, forcedTier = null) {
+    let template = BASE_DB[type].find(i => baseName.includes(i.n)) || BASE_DB[type][0];
+    let tier = forcedTier !== null ? forcedTier : template.t;
+    let variance = 0.85 + Math.random() * 0.3;
+    let val = Math.floor(template.v * variance);
+    let luck = (G.stats.i * 2) + (G.day / 2); 
+    let roll = Math.random() * 100 + luck;
+    let rarity = 0; 
+    if (roll > 115) rarity = 3;
+    else if (roll > 90) rarity = 2;
+    else if (roll > 60) rarity = 1;
+    if (forcedTier === 0) rarity = 0;
 
-    document.getElementById('start-screen').style.display = 'none';
-    
-    log(`遊戲開始`, `你是 ${job.name}，人格測試結果為 [${G.mbti.id} ${G.mbti.name}]`, 'hl-mbti');
-    log(`人格特質`, G.mbti.bonus, 'hl-mbti');
-    updateUI();
-    nextDay();
+    let item = { name: template.n, type: type, tier: tier, rarity: rarity, val: val, stats: {}, affixes: [] };
+
+    if (rarity >= 1) addAffix(item, 'prefix');
+    if (rarity >= 2) addAffix(item, 'suffix');
+    if (rarity >= 3) { addAffix(item, Math.random()>0.5 ? 'prefix':'suffix'); item.val = Math.floor(item.val * 1.3); }
+
+    let pre = item.affixes.find(a=>a.type=='prefix')?.n || '';
+    let suf = item.affixes.find(a=>a.type=='suffix')?.n || '';
+    item.fullName = `${pre} ${item.name} ${suf}`.trim();
+    return item;
 }
 
-function applyMBTIBonus() {
-    const t = G.mbti.tags;
-    // T/F 影響 力量/意志
-    if (t.includes('T')) G.stats.s += 1;
-    if (t.includes('F')) G.stats.w += 1;
-    // S/N 影響 敏捷/智力
-    if (t.includes('S')) G.stats.a += 1;
-    if (t.includes('N')) G.stats.i += 1;
-    
-    // 特殊修正
-    if (G.mbti.id === 'INTJ') G.stats.i += 2;
-    if (G.mbti.id === 'ESTP') G.stats.a += 2;
-    if (G.mbti.id === 'INFP') G.maxHp -= 10;
-    if (G.mbti.id === 'ISTJ') G.maxHp += 10;
-    if (G.mbti.id === 'ENTJ') { G.stats.s+=1; G.stats.a+=1; G.stats.i+=1; G.stats.w+=1; }
-    
-    G.hp = G.maxHp;
-}
+function addAffix(item, type) {
+    let pool = [];
+    if (item.type === 'melee' || item.type === 'ranged') pool = type === 'prefix' ? PREFIX.atk : SUFFIX.dmg;
+    else pool = type === 'prefix' ? PREFIX.def : SUFFIX.sur;
+    if(Math.random()>0.7) pool = pool.concat(type==='prefix'?PREFIX.util : SUFFIX.god);
 
-function nextDay() {
-    if (!G.alive) return;
-    G.day++;
-    
-    // 階段
-    if (G.day === 15) { G.phase = 2; log("警報", "病毒變異，喪尸變得更具攻擊性！", "val-danger"); }
-    if (G.day === 40) { G.phase = 3; log("覺醒", "空氣中充滿了能量，異能者開始出現...", "val-mbti"); }
-
-    // 消耗計算 (MBTI J型人 節省資源)
-    let cost = 10;
-    if (G.mbti.tags.includes('J')) cost = 8; 
-    if (G.mbti.tags.includes('P')) cost = 12; // P型人 隨性消耗
-
-    G.food -= cost;
-    G.water -= cost + 5;
-    
-    // SAN 回復/扣除 (I型人獨處回復, E型人獨處扣除)
-    if (G.mbti.tags.includes('I')) G.san += 2;
-    else G.san -= 1;
-
-    checkStatus();
-    if (!G.alive) return;
-
-    // 異能覺醒 (MBTI N型人 機率高)
-    let awakeChance = G.mbti.tags.includes('N') ? 0.08 : 0.03;
-    if (G.phase === 3 && !G.skill && Math.random() < awakeChance) {
-        triggerEvent(evt_awake);
-    } else {
-        genEvent();
+    let affix = pool[Math.floor(Math.random() * pool.length)];
+    item.affixes.push({n:affix.n, type:type});
+    for (let k in affix) {
+        if (k === 'n' || k === 'type') continue;
+        if (!item.stats[k]) item.stats[k] = 0;
+        let v = affix[k];
+        if (k === 'v') item.stats[affix.s] = (item.stats[affix.s]||0) + Math.floor(v * (1 + item.tier*0.5));
+        else item.stats[k] += v;
     }
-    updateUI();
 }
 
-function checkStatus() {
-    if (G.food <= 0) { G.food = 0; G.hp -= 5; log("飢餓", "你餓得發慌。", "hl-loss"); }
-    if (G.water <= 0) { G.water = 0; G.hp -= 10; log("脫水", "你快渴死了。", "hl-loss"); }
+function generateLoot(type) {
+    let tier = 1 + Math.floor(G.day / 22);
+    tier += Math.floor(Math.random()*3) - 1; 
+    tier = Math.max(1, Math.min(5, tier));
+    let pool = BASE_DB[type].filter(i => i.t === tier || i.t === tier - 1);
+    if(pool.length === 0) pool = BASE_DB[type];
+    let template = pool[Math.floor(Math.random()*pool.length)];
+    return createItem(type, template.n);
+}
+
+function getStat(key) {
+    let base = G.stats[key] || 0;
+    for(let slot in G.eq) if(G.eq[slot] && G.eq[slot].stats && G.eq[slot].stats[key]) base += G.eq[slot].stats[key];
+    if(key === 's') base += getStatBonus('s');
+    if(key === 'a') base += getStatBonus('a');
+    if(key === 'i') base += getStatBonus('i');
+    return base;
+}
+
+function getStatBonus(key) {
+    let val = 0;
+    for(let slot in G.eq) if(G.eq[slot] && G.eq[slot].stats && G.eq[slot].stats[key]) val += G.eq[slot].stats[key];
+    return val;
+}
+
+function getCombatStats() {
+    let def = (G.eq.head?.val||0) + (G.eq.body?.val||0);
+    let defP = 0; for(let slot in G.eq) defP += (G.eq[slot]?.stats?.defP || 0);
+    def = Math.floor(def * (1 + defP));
+    let crit = 5 + (getStat('a')/2); for(let slot in G.eq) crit += (G.eq[slot]?.stats?.crit || 0);
+    let dodge = getStat('a')/2; for(let slot in G.eq) dodge += (G.eq[slot]?.stats?.dodge || 0);
+    let leech = 0; for(let slot in G.eq) leech += (G.eq[slot]?.stats?.leech || 0);
+    return { def, crit, dodge, leech };
+}
+
+// ==================== UI 詳情顯示邏輯 (v7.1 新增) ====================
+
+function showItemDetail(slot) {
+    const item = G.eq[slot];
+    if(!item || item.name === '無') return;
     
-    if (G.inf > 0) G.inf += (G.phase * 0.5);
-    if (G.inf >= 100) return gameOver("感染擴散全身，你變成了喪尸。");
+    const rNames = ['普通','稀有','史詩','傳說'];
+    const rColors = ['var(--r-common)','var(--r-rare)','var(--r-epic)','var(--r-legend)'];
+    const typeName = slot === 'melee' ? '近戰武器' : slot === 'ranged' ? '遠程武器' : slot === 'head' ? '頭盔' : '護甲';
     
-    if (G.san <= 0) {
-        G.san = 0;
-        G.hp -= 20;
-        log("崩潰", "你精神崩潰了，做出自殘行為！", "hl-loss");
+    let html = `<div style="color:${rColors[item.rarity]}; font-size:1.2em; font-weight:bold; margin-bottom:5px;">${item.fullName}</div>`;
+    html += `<div style="font-size:0.9em; color:#888; margin-bottom:10px;">Tier ${item.tier} ${rNames[item.rarity]} ${typeName}</div>`;
+    
+    // 基礎數值
+    if(item.val > 0) {
+        let label = (slot.includes('head') || slot.includes('body')) ? '🛡️ 防禦力' : '⚔️ 攻擊力';
+        html += `<div style="font-size:1.1em; color:#eee; margin-bottom:10px;">${label}: ${item.val}</div>`;
+    }
+
+    // 詞條屬性
+    let statHtml = '';
+    const map = {
+        s: '力量', a: '敏捷', i: '智力', w: '意志',
+        dmgP: '傷害加成', defP: '防禦加成', crit: '暴擊率', dodge: '閃避率',
+        leech: '吸血', heal: '每日回血', san: '每日回SAN', hp: '生命上限', loot: '幸運值'
+    };
+
+    for(let k in item.stats) {
+        let v = item.stats[k];
+        let valStr = v;
+        if(['dmgP','defP','leech','loot'].includes(k)) valStr = Math.floor(v*100) + '%';
+        else valStr = '+' + v;
+        
+        // 特殊單位
+        if(k === 'crit' || k === 'dodge') valStr += '%';
+
+        statHtml += `<div style="color:#aaa">${map[k] || k}: <span style="color:#fff">${valStr}</span></div>`;
     }
     
-    if (G.hp <= 0) return gameOver("你的生命走到了盡頭。");
+    if(statHtml) html += `<div style="background:#222; padding:10px; border-radius:4px; margin-top:10px;">${statHtml}</div>`;
+    else html += `<div style="color:#555; margin-top:10px;">(無額外詞條)</div>`;
+
+    openModal('', html);
 }
 
-// ================= 事件系統 =================
-
-function genEvent() {
-    // MBTI E型人 容易遭遇人類/生物 (Encounter rate up)
-    let combatRate = G.mbti.tags.includes('E') ? 0.4 : 0.25;
-    let rand = Math.random();
-
-    if (rand < combatRate) return triggerEvent(evt_combat);
-    if (rand < 0.7) return triggerEvent(evt_scavenge);
-    return triggerEvent(evt_encounter);
-}
-
-function triggerEvent(fn) {
-    const e = fn();
-    const area = document.getElementById('action-area');
-    area.innerHTML = '';
-
-    const titleDiv = document.createElement('div');
-    titleDiv.innerHTML = `<strong style="color:#fff; font-size:1.1em">${e.title}</strong><br><span style="color:#888">${e.desc}</span>`;
-    area.appendChild(titleDiv);
-
-    const grid = document.createElement('div');
-    grid.className = 'btn-grid';
-
-    e.opts.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.innerHTML = opt.txt;
-        if (opt.disabled) btn.disabled = true;
-        btn.onclick = () => {
-            opt.func();
-            updateUI();
-        };
-        grid.appendChild(btn);
-    });
-    area.appendChild(grid);
-}
-
-// --- 事件庫 ---
-
-const evt_scavenge = () => {
-    const locs = ['廢棄超市', '民居', '警局', '五金店', '醫院'];
-    const loc = locs[Math.floor(Math.random() * locs.length)];
+function showStats() {
+    let cs = getCombatStats();
+    let html = `<div style="text-align:left; padding:0 20px;">`;
+    html += `<p>💪 <strong>力量:</strong> ${getStat('s')} <span style="color:#666;font-size:0.8em">(近戰傷害)</span></p>`;
+    html += `<p>🦵 <strong>敏捷:</strong> ${getStat('a')} <span style="color:#666;font-size:0.8em">(遠程傷害/暴擊/閃避)</span></p>`;
+    html += `<p>🧠 <strong>智力:</strong> ${getStat('i')} <span style="color:#666;font-size:0.8em">(搜刮品質/製作)</span></p>`;
+    html += `<hr style="border-color:#333">`;
+    html += `<p>🛡️ <strong>總防禦:</strong> ${cs.def}</p>`;
+    html += `<p>💥 <strong>暴擊率:</strong> ${Math.floor(cs.crit)}%</p>`;
+    html += `<p>💨 <strong>閃避率:</strong> ${Math.floor(cs.dodge)}%</p>`;
+    html += `<p>🩸 <strong>吸血率:</strong> ${Math.floor(cs.leech*100)}%</p>`;
+    html += `</div>`;
     
-    return {
-        title: `搜索：${loc}`,
-        desc: `你進入了${loc}，這裡看起來...`,
-        opts: [
-            { txt: `搜索 (智力 ${G.stats.i})`, func: () => {
-                // MBTI S型人 搜刮加成
-                let roll = G.stats.i * 10 + (G.mbti.tags.includes('S') ? 20 : 0);
-                if (Math.random() * 100 < roll) {
-                    const f = 15 + Math.floor(Math.random()*20);
-                    const w = 15 + Math.floor(Math.random()*20);
-                    G.food += f; G.water += w;
-                    let msg = `獲得 食物+${f}, 水+${w}`;
-                    
-                    // 特殊掉落
-                    if (loc === '警局' && Math.random() > 0.6) { G.ammo += 10; msg += ", 子彈+10"; }
-                    if (loc === '醫院' && Math.random() > 0.7) { G.hp = Math.min(G.maxHp, G.hp+50); msg += ", 找到急救包(HP恢復)"; }
-                    
-                    log("搜索成功", msg, "hl-gain");
-                } else {
-                    log("一無所獲", "這裡空空如也。", "hl-loss");
-                }
-                nextDay();
-            }},
-            { txt: `快速搜刮 (敏捷 ${G.stats.a})`, func: () => {
-                if (Math.random() > 0.4) {
-                    G.food += 10;
-                    log("快速搜刮", "拿了點東西就跑。", "hl-gain");
-                } else {
-                    log("意外", "弄出聲音引來了敵人！", "hl-loss");
-                    return triggerEvent(evt_combat); // 強制轉戰鬥
-                }
-                nextDay();
-            }}
-        ]
-    };
-};
-
-const evt_combat = () => {
-    const pool = ENEMIES.filter(e => e.ph <= G.phase);
-    const enemy = pool[Math.floor(Math.random() * pool.length)];
-    const wep = WEAPONS[G.wep];
-    
-    // MBTI P型人 暴擊/逃跑加成
-    const isP = G.mbti.tags.includes('P');
-    
-    const fight = (range) => {
-        let dmg = 0;
-        let txt = "";
-        
-        if (range) {
-            G.ammo--;
-            dmg = wep.dmg + (G.stats.a * 2);
-            txt = `射擊`;
-        } else {
-            dmg = wep.dmg + (G.stats.s * 3);
-            txt = `近戰`;
-        }
-        
-        // MBTI T型人 戰鬥傷害加成
-        if (G.mbti.tags.includes('T')) dmg += 5;
-        // P型人 暴擊
-        if (isP && Math.random() > 0.8) { dmg *= 2; txt += "(暴擊!)"; }
-
-        if (dmg >= enemy.hp) {
-            log("勝利", `${txt} 造成 ${dmg} 傷害，擊殺了 ${enemy.name}。`, "hl-gain");
-            if (wep.noise > 40 && Math.random() > 0.7) {
-                log("噪音", "槍聲引來了更多敵人！", "val-danger");
-                return setTimeout(() => triggerEvent(evt_combat), 800);
-            }
-        } else {
-            let pdmg = Math.max(1, enemy.atk - G.stats.s/2);
-            G.hp -= pdmg;
-            log("戰鬥中", `${txt} 造成 ${dmg}，敵人反擊造成 ${pdmg} 傷害。`, "hl-loss");
-            if (G.hp > 0) return triggerEvent(() => ({ // 繼續戰鬥
-                title: `對決：${enemy.name}`, desc: `敵人還剩下 ${enemy.hp - dmg} HP`,
-                opts: [{txt: '繼續攻擊', func: () => fight(range)}, {txt: '逃跑', func: run}]
-            }));
-            else return checkStatus(); // 死亡檢查
-        }
-        nextDay();
-    };
-    
-    const run = () => {
-        let chance = G.stats.a * 10 + (isP ? 25 : 0);
-        if (Math.random()*100 < chance) {
-            log("逃跑", "你成功逃脫了。", "hl-gain");
-            nextDay();
-        } else {
-            G.hp -= 15;
-            log("失敗", "逃跑失敗，背部受傷！", "hl-loss");
-            fight(false); // 強制近戰
-        }
-    };
-
-    return {
-        title: `遭遇：${enemy.name}`,
-        desc: `HP: ${enemy.hp} | ATK: ${enemy.atk}`,
-        opts: [
-            { txt: `開火 (${G.wep})`, disabled: (wep.type!=='ranged' || G.ammo<=0), func: () => fight(true) },
-            { txt: `近戰攻擊`, func: () => fight(false) },
-            { txt: `逃跑`, func: run }
-        ]
-    };
-};
-
-const evt_encounter = () => {
-    // MBTI F型人 NPC 交互加成
-    const isF = G.mbti.tags.includes('F');
-    const isE = G.mbti.tags.includes('E');
-
-    return {
-        title: "倖存者",
-        desc: "你遇到一群看起來很疲憊的倖存者。",
-        opts: [
-            { txt: `交流 (F型/魅力)`, func: () => {
-                if (isF || isE) {
-                    G.san += 15;
-                    log("交流", "你們互相交換了情報，心理得到了慰藉。(SAN+15)", "hl-gain");
-                } else {
-                    log("尷尬", "你不知道該說什麼，氣氛很僵。", "hl-loss");
-                }
-                nextDay();
-            }},
-            { txt: `交易 (食物換子彈)`, func: () => {
-                if (G.food >= 20) {
-                    G.food -= 20; G.ammo += 8;
-                    log("交易", "失去食物，獲得子彈。", "hl-gain");
-                } else log("貧窮", "你物資不夠。", "hl-loss");
-                nextDay();
-            }},
-            { txt: `搶劫 (力量)`, func: () => {
-                if (G.stats.s > 6) {
-                    G.food += 30; G.san -= 10;
-                    log("搶劫", "你搶走了他們的物資，他們詛咒你。", "val-danger");
-                } else {
-                    G.hp -= 30;
-                    log("反殺", "他們有武器！你被打成了篩子。", "hl-loss");
-                }
-                nextDay();
-            }}
-        ]
-    };
-};
-
-const evt_awake = () => {
-    return {
-        title: "基因覺醒",
-        desc: "你的 DNA 正在重組，因為你的性格特質，你覺醒了...",
-        opts: [
-            { txt: "接受力量", func: () => {
-                const s = G.mbti.tags.includes('T') ? '鋼鐵之軀 (減傷)' : '念力 (控場)';
-                G.skill = s;
-                if (s.includes('鋼鐵')) G.maxHp += 50;
-                else G.san = 100;
-                log("覺醒", `你獲得了異能：[${s}]`, "hl-mbti");
-                nextDay();
-            }}
-        ]
-    };
-};
-
-// ================= UI =================
-
-function log(t, d, c="") {
-    const b = document.getElementById('log-area');
-    b.innerHTML += `<div class="log-entry"><span class="log-day">Day ${G.day}</span> <span class="log-title ${c}">[${t}]</span> ${d}</div>`;
-    b.scrollTop = b.scrollHeight;
+    openModal('角色面板', html);
 }
 
-function updateUI() {
-    document.getElementById('s-day').innerText = G.day;
-    document.getElementById('s-hp').innerText = Math.floor(G.hp);
-    document.getElementById('s-san').innerText = Math.floor(G.san);
-    document.getElementById('s-inf').innerText = Math.floor(G.inf) + '%';
-    document.getElementById('s-food').innerText = Math.floor(G.food);
-    document.getElementById('s-water').innerText = Math.floor(G.water);
-    document.getElementById('s-ammo').innerText = G.ammo;
-    document.getElementById('s-wep').innerText = WEAPONS[G.wep].name;
-    document.getElementById('s-job').innerText = G.job.name;
-    if (G.mbti) document.getElementById('s-mbti').innerText = `${G.mbti.id}`;
+function openModal(title, content) {
+    document.getElementById('m-title').innerText = title;
+    // 如果沒有標題，隱藏標題欄
+    document.getElementById('m-title').style.display = title ? 'block' : 'none';
+    document.getElementById('m-desc').innerHTML = content;
+    document.getElementById('screen-modal').style.display = 'flex';
 }
 
-function gameOver(reason) {
-    G.alive = false;
-    document.getElementById('action-area').innerHTML = `
-        <div style="text-align:center; color:#ff4444">
-            <h2>GAME OVER</h2><p>${reason}</p>
-            <button onclick="location.reload()" style="width:100%;text-align:center">重新開始</button>
-        </div>`;
+function closeModal() {
+    document.getElementById('screen-modal').style.display = 'none';
 }
 
-// 初始化
-(function() {
-    const g = document.getElementById('profession-grid');
+// ==================== 流程控制 ====================
+
+function setDiff(d) {
+    G.diff = d;
+    document.getElementById('screen-start').style.display = 'none';
+    document.getElementById('screen-jobs').style.display = 'flex';
+    
+    const box = document.getElementById('job-container');
     JOBS.forEach(j => {
         const d = document.createElement('div');
         d.className = 'job-card';
-        d.innerHTML = `
-            <div class="job-title">${j.name}</div>
-            <div style="font-size:0.8em; color:#999; margin:4px 0">${j.desc}</div>
-            <div class="job-stats">
-                STR:${j.stats.s} AGI:${j.stats.a}<br>INT:${j.stats.i} WIL:${j.stats.w}
-            </div>`;
-        d.onclick = () => startGame(j.id);
-        g.appendChild(d);
+        d.innerHTML = `<strong class="q3">${j.n}</strong><br>
+        <span style="font-size:0.8em;color:#aaa">力${j.s.s} 敏${j.s.a} 智${j.s.i}</span><br>
+        <span style="font-size:0.8em;color:#666">${j.g.join(', ')}</span>`;
+        d.onclick = () => startGame(j);
+        box.appendChild(d);
     });
-})();
+}
+
+function startGame(job) {
+    G.job = job.n;
+    G.stats = {...job.s};
+    G.ammo = job.ammo;
+    
+    G.eq.melee = createItem('melee', job.g[0], job.g[0].includes('無')?0:null);
+    G.eq.range = createItem('ranged', job.g[1], job.g[1].includes('無')?0:null);
+    G.eq.head = createItem('head', job.g[2], job.g[2].includes('無')?0:null);
+    G.eq.body = createItem('body', job.g[3], job.g[3].includes('無')?0:null);
+
+    if(G.diff === 3) { G.food=50; G.water=50; G.hp=80; }
+
+    document.getElementById('screen-jobs').style.display = 'none';
+    log('系統', `難度:${['正常','困難','噩夢'][G.diff-1]} | 職業:${G.job}`);
+    updateUI();
+    campPhase();
+}
+
+function campPhase() {
+    if(!G.alive) return;
+    G.day++;
+
+    let msgs = [];
+    if(G.buffs.includes('bleed')) { G.hp-=8; msgs.push("🩸失血-8"); }
+    
+    let heal = 0, sanRec = 0;
+    for(let s in G.eq) {
+        heal += (G.eq[s]?.stats?.heal || 0);
+        sanRec += (G.eq[s]?.stats?.san || 0);
+    }
+    if(heal>0) { G.hp+=heal; msgs.push(`回血+${heal}`); }
+    if(sanRec>0) { G.san+=sanRec; msgs.push(`回SAN+${sanRec}`); }
+
+    let cost = 10 * G.diff;
+    G.food -= cost; G.water -= cost + 5;
+    
+    if(msgs.length) log('狀態', msgs.join(', '));
+    if(G.food<0 || G.water<0) { G.hp-=15; log('生存', '飢渴吞噬生命 (-15HP)', 'c-loss'); }
+    if(G.san<=0) { G.hp-=25; log('理智', '精神崩潰 (-25HP)', 'c-loss'); }
+
+    if(G.hp > G.maxHp) G.hp = G.maxHp;
+    if(G.san > 100) G.san = 100;
+
+    if(G.hp <= 0) return gameOver('死於生存耗竭');
+    if(G.day === G.maxDay) return triggerEvent(evt_boss);
+
+    updateUI();
+    
+    const area = document.getElementById('action-area');
+    area.innerHTML = `
+        <div style="border-bottom:1px solid #333;margin-bottom:10px;padding-bottom:5px">
+            <strong style="color:#fff">⛺ 營地 Day ${G.day}</strong>
+        </div>
+        <div class="btn-grid">
+            <button onclick="handleCamp('scavenge')">🏙️ 搜刮物資<br><span class="val-cost">精力-20</span></button>
+            <button onclick="handleCamp('rest')">💤 休息養傷<br><span class="val-cost">食物-20</span></button>
+            <button onclick="handleCamp('train')">🏋️ 訓練屬性<br><span class="val-cost">水-30</span></button>
+        </div>
+    `;
+}
+
+function handleCamp(act) {
+    if(act === 'rest') {
+        if(G.food < 20) { log('提示','食物不足'); return; }
+        G.food -= 20;
+        G.hp = Math.min(G.maxHp, G.hp+40);
+        G.san = Math.min(100, G.san+30);
+        if(Math.random()>0.5) G.buffs = [];
+        log('休息', '狀態大幅恢復');
+        triggerEvent(evt_night);
+    } else if (act === 'train') {
+        if(G.water < 30) { log('提示','水不足'); return; }
+        G.water -= 30;
+        let s = ['s','a','i'][Math.floor(Math.random()*3)];
+        G.stats[s]++;
+        log('成長', `${s=='s'?'力量':s=='a'?'敏捷':'智力'} +1`, 'c-gain');
+        triggerEvent(evt_night);
+    } else {
+        generateEvent();
+    }
+}
+
+function generateEvent() {
+    let r = Math.random();
+    let combatChance = 0.4 + (G.day/180);
+    if(r < combatChance) triggerEvent(evt_combat);
+    else triggerEvent(evt_loot);
+}
+
+function triggerEvent(fn) {
+    let e = fn();
+    let area = document.getElementById('action-area');
+    area.innerHTML = `<h3 style="color:#fff;margin:0 0 10px 0">${e.title}</h3><p style="color:#aaa">${e.desc}</p><div class="btn-grid" id="opts-grid"></div>`;
+    let g = document.getElementById('opts-grid');
+    e.opts.forEach(o => {
+        let b = document.createElement('button');
+        b.innerHTML = o.txt;
+        if(o.disabled) b.disabled=true;
+        b.onclick = ()=>{ o.func(); updateUI(); };
+        g.appendChild(b);
+    });
+}
+
+const evt_night = () => {
+    return {
+        title: "🌙 夜晚", desc: "夜晚充滿危險...",
+        opts: [{txt:"度過夜晚", func:()=>{
+            if(Math.random() < 0.2) {
+                let dmg = 15 + Math.floor(G.day/3);
+                let cs = getCombatStats();
+                let take = Math.max(0, dmg - cs.def);
+                G.hp -= take;
+                log('夜襲', `遭受攻擊! 受傷${take} (防禦${cs.def})`, 'c-loss');
+            }
+            campPhase();
+        }}]
+    };
+};
+
+const evt_loot = () => {
+    return {
+        title: "📦 搜刮", desc: "你發現了一處未探索的廢墟。",
+        opts: [
+            {txt:`搜索 (智力${getStat('i')})`, func:()=>{
+                let bonus = 0;
+                for(let s in G.eq) bonus += (G.eq[s]?.stats?.loot || 0);
+
+                if(Math.random()*20 + getStat('i') + (bonus*100) > 10) {
+                    let type = ['melee','ranged','head','body'][Math.floor(Math.random()*4)];
+                    let item = generateLoot(type);
+                    
+                    // 彈窗顯示撿到的裝備
+                    let html = `<div style="font-weight:bold; color:${['#ccc','#5af','#a5f','#fa0'][item.rarity]}">${item.fullName}</div>`;
+                    if(item.val) html += `<div>${type.includes('ed')?'攻':'防'}: ${item.val}</div>`;
+                    for(let k in item.stats) html += `<div style="font-size:0.9em;color:#aaa">${k}:${item.stats[k]}</div>`;
+                    
+                    openModal('戰利品發現!', html + `<br><p>你要更換當前裝備嗎？</p>
+                        <button onclick="equipFoundItem('${type}')" style="width:100%;text-align:center;margin-bottom:5px">更換</button>
+                        <button onclick="closeModal(); triggerEvent(evt_night)" style="width:100%;text-align:center;border-color:#555">丟棄</button>`);
+                    
+                    // 暫存此物品以便在 modal 中調用
+                    G.foundItem = item;
+                    G.food+=15; G.ammo+=5;
+                } else {
+                    log('搜刮', '一無所獲');
+                    triggerEvent(evt_night);
+                }
+            }},
+            {txt:'離開', func:()=>triggerEvent(evt_night)}
+        ]
+    };
+};
+
+// 為了讓彈窗按鈕能呼叫
+window.equipFoundItem = function(type) {
+    G.eq[type] = G.foundItem;
+    log('裝備', `換上了 ${G.foundItem.fullName}`, 'c-gain');
+    updateUI();
+    closeModal();
+    triggerEvent(evt_night);
+};
+
+const evt_combat = () => {
+    let scale = 1 + (G.day / 20);
+    let hp = Math.floor((30 + G.day*4) * scale);
+    let atk = Math.floor((8 + G.day*0.8) * scale * G.diff);
+    let name = ['狂暴者','武裝暴徒','生化獸','夜魔'][Math.floor(Math.random()*4)];
+
+    const fight = (range) => {
+        let cs = getCombatStats();
+        let dmg = range ? G.eq.range.val + getStat('a') : G.eq.melee.val + getStat('s');
+        if(range) G.ammo--;
+        
+        let dmgP = 0; for(let s in G.eq) dmgP += (G.eq[s]?.stats?.dmgP || 0);
+        dmg = Math.floor(dmg * (1 + dmgP));
+        if(Math.random()*100 < cs.crit) { dmg *= 2; log('戰鬥', '暴擊!', 'c-epic'); }
+
+        let incoming = Math.max(1, atk - cs.def);
+        if(Math.random()*100 < cs.dodge) { incoming = 0; log('戰鬥', '閃避!', 'c-gain'); }
+
+        hp -= dmg;
+        G.hp -= incoming;
+        if(cs.leech > 0) { let heal = Math.floor(dmg * cs.leech); if(heal>0) G.hp+=heal; }
+
+        log('交鋒', `傷敵${dmg} / 受傷${incoming}`);
+
+        if(G.hp <= 0) return gameOver(`被 ${name} 殺死`);
+        if(hp <= 0) {
+            log('勝利', `擊殺 ${name}`, 'c-gain');
+            if(Math.random() < 0.3) {
+                 let item = generateLoot(['melee','ranged','head','body'][Math.floor(Math.random()*4)]);
+                 // 戰鬥掉落直接放入背包提示 (簡化版)
+                 log('掉落', `怪物掉落: ${item.fullName}`);
+                 if(confirm(`戰利品: ${item.fullName}\n更換?`)) G.eq[item.type] = item;
+            }
+            return triggerEvent(evt_night);
+        }
+
+        triggerEvent(() => ({
+            title:`⚔️ ${name}`, desc:`敵HP:${hp} (攻${atk}) | 我HP:${Math.floor(G.hp)} (防${cs.def})`,
+            opts:[
+                {txt:`射擊`, disabled:G.ammo<=0, func:()=>fight(true)},
+                {txt:`近戰`, func:()=>fight(false)},
+                {txt:`逃跑`, func:()=>triggerEvent(evt_night)}
+            ]
+        }));
+    };
+
+    return { title:`遭遇 ${name}`, desc:`殺氣騰騰...`, opts:[{txt:'開戰',func:()=>fight(false)}] };
+};
+
+const evt_boss = () => {
+    let bossHp = 10000 * G.diff;
+    let bossAtk = 150 * G.diff;
+    
+    const fight = () => {
+        let cs = getCombatStats();
+        let dmg = (G.ammo>0 ? (G.eq.range.val+getStat('a')) : (G.eq.melee.val+getStat('s')));
+        if(G.ammo>0) G.ammo--;
+
+        let dmgP = 0; for(let s in G.eq) dmgP += (G.eq[s]?.stats?.dmgP || 0);
+        dmg = Math.floor(dmg * (1 + dmgP));
+        if(Math.random()*100 < cs.crit) dmg *= 2;
+
+        let incoming = Math.max(10, bossAtk - cs.def);
+        if(Math.random()*100 < cs.dodge) incoming = 0;
+
+        bossHp -= dmg;
+        G.hp -= incoming;
+        if(cs.leech > 0) G.hp += Math.floor(dmg * cs.leech);
+
+        log('決戰', `BOSS HP:${bossHp} | 傷害:${incoming}`, 'c-epic');
+
+        if(G.hp <= 0) return gameOver("你未能阻止末日...");
+        if(bossHp <= 0) {
+            document.getElementById('action-area').innerHTML = `
+            <div style="text-align:center">
+                <h1 class="q3">傳奇倖存者</h1>
+                <p>你擊敗了原初感染體，你是新世界的神。</p>
+                <p class="q3">最終裝備: ${G.eq.melee.fullName} / ${G.eq.body.fullName}</p>
+                <button onclick="location.reload()">再玩一次</button>
+            </div>`;
+        } else {
+            setTimeout(fight, 300);
+        }
+    };
+    return { title:"☠️ 最終決戰：原初感染體", desc:"HP: ??? | 攻擊: ???", opts:[{txt:"決一死戰", func:fight}] };
+};
+
+function log(t, m, c='') {
+    let d = document.getElementById('log-area');
+    d.innerHTML += `<div class="log-entry"><span class="day-tag">D${G.day}</span>[${t}] <span class="${c}">${m}</span></div>`;
+    d.scrollTop = d.scrollHeight;
+}
+function updateUI() {
+    document.getElementById('v-day').innerText = `${G.day}/${G.maxDay}`;
+    document.getElementById('v-hp').innerText = Math.floor(G.hp);
+    document.getElementById('v-san').innerText = Math.floor(G.san);
+    document.getElementById('v-food').innerText = Math.floor(G.food);
+    document.getElementById('v-water').innerText = Math.floor(G.water);
+    document.getElementById('v-ammo').innerText = `(${G.ammo})`;
+    document.getElementById('v-stats').innerText = `${getStat('s')}/${getStat('a')}/${getStat('i')}`;
+    ['melee','range','head','body'].forEach(s => {
+        let el = document.getElementById(`eq-${s}`);
+        let item = G.eq[s];
+        el.className = `q${item.rarity}`;
+        el.innerText = item.fullName;
+    });
+}
+function gameOver(msg) {
+    G.alive = false;
+    document.getElementById('action-area').innerHTML = `<div style="text-align:center;color:#f33"><h2>GAME OVER</h2><p>${msg}</p><button onclick="location.reload()">RETRY</button></div>`;
+}
+
+// 輔助函式定義
+function getStat(key) {
+    let base = G.stats[key] || 0;
+    for(let slot in G.eq) if(G.eq[slot] && G.eq[slot].stats && G.eq[slot].stats[key]) base += G.eq[slot].stats[key];
+    if(key === 's') base += getStatBonus('s');
+    if(key === 'a') base += getStatBonus('a');
+    if(key === 'i') base += getStatBonus('i');
+    return base;
+}
+function getStatBonus(key) {
+    let val = 0;
+    for(let slot in G.eq) if(G.eq[slot] && G.eq[slot].stats && G.eq[slot].stats[key]) val += G.eq[slot].stats[key];
+    return val;
+}
+function getCombatStats() {
+    let def = (G.eq.head?.val||0) + (G.eq.body?.val||0);
+    let defP = 0; for(let slot in G.eq) defP += (G.eq[slot]?.stats?.defP || 0);
+    def = Math.floor(def * (1 + defP));
+    let crit = 5 + (getStat('a')/2); for(let slot in G.eq) crit += (G.eq[slot]?.stats?.crit || 0);
+    let dodge = getStat('a')/2; for(let slot in G.eq) dodge += (G.eq[slot]?.stats?.dodge || 0);
+    let leech = 0; for(let slot in G.eq) leech += (G.eq[slot]?.stats?.leech || 0);
+    return { def, crit, dodge, leech };
+}
+function createItem(type, baseName, forcedTier = null) {
+    let template = BASE_DB[type].find(i => baseName.includes(i.n)) || BASE_DB[type][0];
+    let tier = forcedTier !== null ? forcedTier : template.t;
+    let variance = 0.85 + Math.random() * 0.3;
+    let val = Math.floor(template.v * variance);
+    let luck = (G.stats.i * 2) + (G.day / 2); 
+    let roll = Math.random() * 100 + luck;
+    let rarity = 0; 
+    if (roll > 115) rarity = 3;
+    else if (roll > 90) rarity = 2;
+    else if (roll > 60) rarity = 1;
+    if (forcedTier === 0) rarity = 0;
+
+    let item = { name: template.n, type: type, tier: tier, rarity: rarity, val: val, stats: {}, affixes: [] };
+
+    if (rarity >= 1) addAffix(item, 'prefix');
+    if (rarity >= 2) addAffix(item, 'suffix');
+    if (rarity >= 3) { addAffix(item, Math.random()>0.5 ? 'prefix':'suffix'); item.val = Math.floor(item.val * 1.3); }
+
+    let pre = item.affixes.find(a=>a.type=='prefix')?.n || '';
+    let suf = item.affixes.find(a=>a.type=='suffix')?.n || '';
+    item.fullName = `${pre} ${item.name} ${suf}`.trim();
+    return item;
+}
+function addAffix(item, type) {
+    let pool = [];
+    if (item.type === 'melee' || item.type === 'ranged') pool = type === 'prefix' ? PREFIX.atk : SUFFIX.dmg;
+    else pool = type === 'prefix' ? PREFIX.def : SUFFIX.sur;
+    if(Math.random()>0.7) pool = pool.concat(type==='prefix'?PREFIX.util : SUFFIX.god);
+
+    let affix = pool[Math.floor(Math.random() * pool.length)];
+    item.affixes.push({n:affix.n, type:type});
+    for (let k in affix) {
+        if (k === 'n' || k === 'type') continue;
+        if (!item.stats[k]) item.stats[k] = 0;
+        let v = affix[k];
+        if (k === 'v') item.stats[affix.s] = (item.stats[affix.s]||0) + Math.floor(v * (1 + item.tier*0.5));
+        else item.stats[k] += v;
+    }
+}
+function generateLoot(type) {
+    let tier = 1 + Math.floor(G.day / 22);
+    tier += Math.floor(Math.random()*3) - 1; 
+    tier = Math.max(1, Math.min(5, tier));
+    let pool = BASE_DB[type].filter(i => i.t === tier || i.t === tier - 1);
+    if(pool.length === 0) pool = BASE_DB[type];
+    let template = pool[Math.floor(Math.random()*pool.length)];
+    return createItem(type, template.n);
+}
 
 </script>
 </body>
